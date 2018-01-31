@@ -8,15 +8,17 @@
 
 import RubiksCube as cube
 import time
+import matplotlib.pyplot as plt
+import numpy as np
+import statistics
 
-def solve(scrambledCube, printNet=False):
+def solve(scrambledCube, printNet=False, printStatistics=False):
     t0 = time.time()
     tc = cube.cube(int(len(scrambledCube.net)/3))
     tc.net = scrambledCube.net
     if printNet:
         tc.printNet()
         print()
-        time.sleep(1)
     if tc.size == 2:
         # First layer
         turns = []
@@ -25,21 +27,50 @@ def solve(scrambledCube, printNet=False):
         turns.extend(solve2x2corner(tc, 2))
         turns.extend(solve2x2corner(tc, 3))
 
-        # Finish
-        if printNet:
-            tc.printNet()
-            print()
-        t1 = time.time()
-        turns = cleanSolution(turns)
-        print('Solved first layer in ' + str(len(turns)) + ' moves in ' + str(round(t1-t0, 1)) + ' seconds (' + str(round(len(turns)/(t1-t0), 1)) + ' moves/second)')
-        for i in turns:
-            print(i, end=' ')
+        # OLL
+        if not tc.checkSolved():
+            turns.extend(oll2x2(tc))
 
-def areOpposites(x, y):
+        # PLL
+        if not tc.checkSolved():
+            turns.extend(pll2x2(tc))
+
+    # Finish
+    if printNet:
+        tc.printNet()
+        print()
+    if printStatistics:
+        t1 = time.time()
+        pre = len(turns)
+        turns = cleanSolution(turns)
+        post = len(turns)
+        print(str(len(turns)) + ' moves / ' + str(round(t1-t0, 1)) + ' seconds (' + str(round(len(turns)/(t1-t0), 1)) + ' moves/second)')
+        print('Cleaning saved ' + str(pre-post) + ' turns')
+        for i in turns:
+            print(i.upper(), end=' ')
+        print()
+    if not tc.checkSolved():
+        return 'failed'
+    return(len(turns))
+
+
+def areSame(x, y):
+    if len(x) == len(y):
+        if x[0] == y[0]:
+            return True
+    return False
+
+def areReverses(x, y):
     if len(x) != len(y):
         if x[0] == y[0]:
             return True
     return False
+
+def getReverse(x):
+    prime = ""
+    if len(x) == 1:
+        prime = "'"
+    return x[0] + prime
 
 def cleanSolution(turns):
     # Removes conecutive different direction turns on the same face (u, u' = /)
@@ -48,12 +79,34 @@ def cleanSolution(turns):
     while i < stop:
         x = turns[i-1]
         y = turns[i]
-        if areOpposites(x, y):
+        if areReverses(x, y):
             turns = turns[:i-1] + turns[i+1:]
             stop = len(turns)
             i = 0
         i += 1
-    # TODO: convert three identical consecutive turns to one opposite turn (u, u, u = u'), also fix scramble to do the same
+    # Convert three identical consecutive turns to one opposite turn (u, u, u = u'), also fix scramble to do the same
+    stop = len(turns)
+    i = 2
+    while i < stop:
+        x = turns[i-2]
+        y = turns[i-1]
+        z = turns[i]
+        if areSame(x, y) and areSame(y, z):
+            turns = turns[:i-2] + [getReverse(x)] + turns[i+1:]
+            stop = len(turns)
+            i = 2
+        i += 1
+    # Removes conecutive different direction turns on the same face (u, u' = /)
+    stop = len(turns)
+    i = 1
+    while i < stop:
+        x = turns[i-1]
+        y = turns[i]
+        if areReverses(x, y):
+            turns = turns[:i-1] + turns[i+1:]
+            stop = len(turns)
+            i = 0
+        i += 1
     return turns
 
 def solve2x2corner(cube, corner):
@@ -165,11 +218,143 @@ def solve2x2CornerFromTop(cube, corner):
             if cube.net[5][2] == 1:
                 return turns
 
+def oll2x2(cube):
+    turns = []
+    while True:
+        if cube.net[0][2] == 4 and cube.net[0][3] == 4 and cube.net[1][2] == 4 and cube.net[1][3] == 4:
+            return turns
+        # U
+        if cube.net[0][3] == 4 and cube.net[1][3] == 4 and cube.net[2][0] == 4 and cube.net[2][1] == 4:
+            turns.extend(["f", "r", "u", "r'", "u'", "f'"])
+            cube.performTurns(["f", "r", "u", "r'", "u'", "f'"])
+            break
+        # T
+        elif cube.net[0][3] == 4 and cube.net[1][3] == 4 and cube.net[2][2] == 4 and cube.net[2][7] == 4:
+            turns.extend(["r", "u", "r'", "u'", "r'", "f", "r", "f'"])
+            cube.performTurns(["r", "u", "r'", "u'", "r'", "f", "r", "f'"])
+            break
+        # L
+        elif cube.net[0][2] == 4 and cube.net[1][3] == 4 and cube.net[2][5] == 4 and cube.net[2][2] == 4:
+            turns.extend(["f", "r", "u'", "r'", "u'", "r", "u", "r'", "f'"])
+            cube.performTurns(["f", "r", "u'", "r'", "u'", "r", "u", "r'", "f'"])
+            break
+        # S
+        elif cube.net[1][2] == 4 and cube.net[2][3] == 4 and cube.net[2][5] == 4 and cube.net[2][7] == 4:
+            turns.extend(["r", "u", "r'", "u", "r", "u", "u", "r'"])
+            cube.performTurns(["r", "u", "r'", "u", "r", "u", "u", "r'"])
+            break
+        # As
+        elif cube.net[0][3] == 4 and cube.net[2][0] == 4 and cube.net[2][2] == 4 and cube.net[2][4] == 4:
+            turns.extend(["r", "u", "u", "r'", "u'", "r", "u'", "r'"])
+            cube.performTurns(["r", "u", "u", "r'", "u'", "r", "u'", "r'"])
+            break
+        # Pi
+        elif cube.net[2][0] == 4 and cube.net[2][1] == 4 and cube.net[2][3] == 4 and cube.net[2][6] == 4:
+            turns.extend(["f", "r", "u", "r'", "u'", "r", "u", "r'", "u'", "f'"])
+            cube.performTurns(["f", "r", "u", "r'", "u'", "r", "u", "r'", "u'", "f'"])
+            break
+        # H
+        elif cube.net[2][2] == 4 and cube.net[2][3] == 4 and cube.net[2][6] == 4 and cube.net[2][7] == 4:
+            turns.extend(["r", "r", "u", "u", "r", "u", "u", "r", "r"])
+            cube.performTurns(["r", "r", "u", "u", "r", "u", "u", "r", "r"])
+            break
+        else:
+            cube.performTurns(['u'])
+            turns.append('u')
+    return turns
 
+def pll2x2(cube):
+    alg = ["R", "B'", "R", "F", "F", "R'", "B", "R", "F", "F", "R", "R"]
+    turns = []
+    one = False
+    if cube.net[2][0] == cube.net[2][1]:
+        one = True
+    two = False
+    if cube.net[2][2] == cube.net[2][3]:
+        two = True
+    three = False
+    if cube.net[2][4] == cube.net[2][5]:
+        three = True
+    four = False
+    if cube.net[2][6] == cube.net[2][7]:
+        four = True
+    sides = [one, two, three, four]
+    count = 0
+    for i in sides:
+        if i:
+            count += 1
+    if count == 4:
+        while True:
+            if cube.checkSolved():
+                return turns
+            else:
+                turns.append("u")
+                cube.performTurns(["u"])
+    elif count == 0:
+        turns.extend(alg)
+        cube.performTurns(alg)
+        turns.append("u'")
+        cube.performTurns(["u'"])
+        turns.extend(alg)
+        cube.performTurns(alg)
+        while True:
+            if cube.checkSolved():
+                return turns
+            else:
+                turns.append("u")
+                cube.performTurns(["u"])
+    elif count == 1:
+        uCount = 0
+        if one:
+            uCount = 3
+        elif three:
+            uCount = 1
+        elif four:
+            uCount = 2
+        for i in range(uCount):
+            turns.append("u")
+            cube.performTurns(["u"])
+        turns.extend(alg)
+        cube.performTurns(alg)
+        while True:
+            if cube.checkSolved():
+                return turns
+            else:
+                turns.append("u")
+                cube.performTurns(["u"])
+
+# c = cube.cube(2)
+# # scramble = c.scramble(10)
+# # print('Scramble: ', end='')
+# # for i in scramble:
+# #     print(i, end=' ')
+# # print()
+# c.performTurns(["l", "l", "d'", "u'", "l'", "r'", "r'", "b'", "b'", "b'"])
+# solve(c, True, True)
+
+numSolves = 1000
 c = cube.cube(2)
-scramble = c.scramble(50)
-print('Scramble: ', end='')
-for i in scramble:
-    print(i, end=' ')
-print()
-solve(c, True)
+solves = np.zeros(numSolves)
+for i in range(numSolves):
+    print(50*'\b' + 'Solving cube ' + str(i) + ' / ' + str(numSolves), end='')
+    scramble = c.scramble(10)
+    solveMoves = solve(c)
+    if solveMoves == 'failed':
+        print('Solve ' + str(i) + ' failed')
+        for i in scramble:
+            print(i, end=' ')
+    else:
+        solves[i] = solveMoves
+    time.sleep(0.01)
+print(100*'\n')
+plt.xlim([min(solves)-5, max(solves)+5])
+plt.hist(solves, bins=np.arange(0, max(solves)), alpha=0.5)
+plt.xlabel('Number of moves to solve')
+plt.ylabel('Frequency')
+plt.title('Moves to Solve ' + str(numSolves) + ' Cubes')
+plt.show()
+
+print('Max: ' + str(int(max(solves))))
+print('Min: ' + str(int(min(solves))))
+print('Mean: ' + str(sum(solves)/float(len(solves))))
+print("Stdev: " + str(statistics.stdev(solves)))

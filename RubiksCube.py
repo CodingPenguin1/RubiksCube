@@ -57,6 +57,27 @@ class cube():
                 self.net[row][col-size] = 2
         self.solvedState = np.copy(self.net)
 
+    def checkSolved(self):
+        one = np.zeros((self.size, self.size), np.int32)
+        two = np.zeros((self.size, self.size), np.int32)
+        three = np.zeros((self.size, self.size), np.int32)
+        four = np.zeros((self.size, self.size), np.int32)
+        five = np.zeros((self.size, self.size), np.int32)
+        six = np.zeros((self.size, self.size), np.int32)
+        for row in range(self.size):
+            for col in range(self.size):
+                one[row][col] = self.net[2*self.size+row][self.size+col]
+                two[row][col] = self.net[self.size+row][col]
+                three[row][col] = self.net[self.size+row][self.size+col]
+                four[row][col] = self.net[row][self.size+col]
+                five[row][col] = self.net[self.size+row][2*self.size+col]
+                six[row][col] = self.net[self.size+row][3*self.size+col]
+        for row in range(self.size):
+            for col in range(self.size):
+                if one[row][col] != 1 or two[row][col] != 2 or three[row][col] != 3 or four[row][col] != 4 or five[row][col] != 5 or six[row][col] != 6:
+                    return False
+        return True
+
     def printNet(self):
         for row in range(3*self.size):
             for col in range(4*self.size):
