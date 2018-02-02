@@ -6,7 +6,7 @@
 # Date: 1/28/2017
 # =============================================================================
 
-import RubiksCube as cube
+import RubiksCube as Cube
 import time
 import matplotlib.pyplot as plt
 import numpy as np
@@ -14,7 +14,7 @@ import statistics
 
 def solve(scrambledCube, printNet=False, printStatistics=False):
     t0 = time.time()
-    tc = cube.cube(int(len(scrambledCube.net)/3))
+    tc = Cube.cube(int(len(scrambledCube.net)/3))
     tc.net = scrambledCube.net
     if printNet:
         tc.printNet()
@@ -158,6 +158,8 @@ def solve2x2CornerFromTop(cube, corner):
     turns = []
     uCount = 0
     if corner == 0:
+        if cube.net[4][2] == 1 and cube.net[3][2] == 3 and cube.net[3][1] == 2:
+            return turns
         if (cube.net[0][2] == 1 and cube.net[2][0] == 2 and cube.net[2][7] == 3) or (cube.net[0][2] == 3 and cube.net[2][0] == 1 and cube.net[2][7] == 2) or (cube.net[0][2] == 2 and cube.net[2][0] == 3 and cube.net[2][7] == 1):
             uCount = 3
         elif (cube.net[0][3] == 1 and cube.net[2][5] == 3 and cube.net[2][6] == 2) or (cube.net[0][3] == 2 and cube.net[2][5] == 1 and cube.net[2][6] == 3) or (cube.net[0][3] == 3 and cube.net[2][5] == 2 and cube.net[2][6] == 1):
@@ -167,12 +169,25 @@ def solve2x2CornerFromTop(cube, corner):
         for i in range(uCount):
             cube.performTurns(['u'])
             turns.append('u')
+        count = 0
+        tmp = Cube.cube(2)
+        tmp.net = np.copy(cube.net)
         while True:
-            cube.performTurns(["l'", "u'", 'l', 'u'])
-            turns.extend(["l'", "u'", 'l', 'u'])
-            if cube.net[4][2] == 1 and cube.net[3][1] == 2 and cube.net[3][2] == 3:
+            count += 1
+            tmp.performTurns(["l'", "u'", 'l', 'u'])
+            if tmp.net[4][2] == 1 and tmp.net[3][1] == 2 and tmp.net[3][2] == 3:
+                if count <= 3:
+                    for i in range(count):
+                        turns.extend(["l'", "u'", 'l', 'u'])
+                        cube.performTurns(["l'", "u'", 'l', 'u'])
+                else:
+                    for i in range(6-count):
+                        turns.extend(["u'", "l'", "u", "l"])
+                        cube.performTurns(["u'", "l'", "u", "l"])
                 return turns
     elif corner == 1:
+        if cube.net[4][3] == 1 and cube.net[3][3] == 3 and cube.net[3][4] == 5:
+            return turns
         if (cube.net[0][2] == 1 and cube.net[2][0] == 3 and cube.net[2][7] == 5) or (cube.net[0][2] == 5 and cube.net[2][0] == 1 and cube.net[2][7] == 3) or (cube.net[0][2] == 3 and cube.net[2][0] == 5 and cube.net[2][7] == 1):
             uCount = 2
         elif (cube.net[0][3] == 1 and cube.net[2][5] == 5 and cube.net[2][6] == 3) or (cube.net[0][3] == 3 and cube.net[2][5] == 1 and cube.net[2][6] == 5) or (cube.net[0][3] == 5 and cube.net[2][5] == 3 and cube.net[2][6] == 1):
@@ -182,12 +197,25 @@ def solve2x2CornerFromTop(cube, corner):
         for i in range(uCount):
             cube.performTurns(['u'])
             turns.append('u')
+        count = 0
+        tmp = Cube.cube(2)
+        tmp.net = np.copy(cube.net)
         while True:
-            cube.performTurns(["r", "u", "r'", "u'"])
-            turns.extend(["r", "u", "r'", "u'"])
-            if cube.net[4][3] == 1 and cube.net[3][3] == 3 and cube.net[3][4] == 5:
+            count += 1
+            tmp.performTurns(["r", "u", "r'", "u'"])
+            if tmp.net[4][3] == 1 and tmp.net[3][3] == 3 and tmp.net[3][4] == 5:
+                if count <= 3:
+                    for i in range(count):
+                        turns.extend(["r", "u", "r'", "u'"])
+                        cube.performTurns(["r", "u", "r'", "u'"])
+                else:
+                    for i in range(6-count):
+                        turns.extend(["u", "r", "u'", "r'"])
+                        cube.performTurns(["u", "r", "u'", "r'"])
                 return turns
     elif corner == 2:
+        if cube.net[5][3] == 1 and cube.net[3][5] == 5 and cube.net[3][6] == 6:
+            return turns
         if (cube.net[0][2] == 1 and cube.net[2][0] == 5 and cube.net[2][7] == 6) or (cube.net[0][2] == 6 and cube.net[2][0] == 1 and cube.net[2][7] == 5) or (cube.net[0][2] == 5 and cube.net[2][0] == 6 and cube.net[2][7] == 1):
             uCount = 1
         elif (cube.net[1][3] == 1 and cube.net[2][3] == 6 and cube.net[2][4] == 5) or (cube.net[1][3] == 5 and cube.net[2][3] == 1 and cube.net[2][4] == 6) or (cube.net[1][3] == 6 and cube.net[2][3] == 5 and cube.net[2][4] == 1):
@@ -197,12 +225,25 @@ def solve2x2CornerFromTop(cube, corner):
         for i in range(uCount):
             cube.performTurns(['u'])
             turns.append('u')
+        count = 0
+        tmp = Cube.cube(2)
+        tmp.net = np.copy(cube.net)
         while True:
-            cube.performTurns(["b", "u", "b'", "u'"])
-            turns.extend(["b", "u", "b'", "u'"])
-            if cube.net[5][3] == 1 and cube.net[3][5] == 5 and cube.net[3][6] == 6:
+            count += 1
+            tmp.performTurns(["b", "u", "b'", "u'"])
+            if tmp.net[5][3] == 1 and tmp.net[3][5] == 5 and tmp.net[3][6] == 6:
+                if count <= 3:
+                    for i in range(count):
+                        turns.extend(["b", "u", "b'", "u'"])
+                        cube.performTurns(["b", "u", "b'", "u'"])
+                else:
+                    for i in range(6-count):
+                        turns.extend(["u", "b", "u'", "b'"])
+                        cube.performTurns(["u", "b", "u'", "b'"])
                 return turns
     elif corner == 3:
+        if cube.net[5][2] == 1 and cube.net[3][0] == 2 and cube.net[3][7] == 6:
+            return turns
         if (cube.net[0][3] == 1 and cube.net[2][5] == 2 and cube.net[2][6] == 6) or (cube.net[0][3] == 6 and cube.net[2][5] == 1 and cube.net[2][6] == 2) or (cube.net[0][3] == 2 and cube.net[2][5] == 6 and cube.net[2][6] == 1):
             uCount = 3
         elif (cube.net[1][3] == 1 and cube.net[2][3] == 2 and cube.net[2][4] == 6) or (cube.net[1][3] == 6 and cube.net[2][3] == 1 and cube.net[2][4] == 2) or (cube.net[1][3] == 2 and cube.net[2][3] == 6 and cube.net[2][4] == 1):
@@ -212,10 +253,21 @@ def solve2x2CornerFromTop(cube, corner):
         for i in range(uCount):
             cube.performTurns(['u'])
             turns.append('u')
+        count = 0
+        tmp = Cube.cube(2)
+        tmp.net = np.copy(cube.net)
         while True:
-            cube.performTurns(["l", "u", "l'", "u'"])
-            turns.extend(["l", "u", "l'", "u'"])
-            if cube.net[5][2] == 1:
+            count += 1
+            tmp.performTurns(["l", "u", "l'", "u'"])
+            if tmp.net[5][2] == 1:
+                if count <= 3:
+                    for i in range(count):
+                        turns.extend(["l", "u", "l'", "u'"])
+                        cube.performTurns(["l", "u", "l'", "u'"])
+                else:
+                    for i in range(6-count):
+                        turns.extend(["u", "l", "u'", "l'"])
+                        cube.performTurns(["u", "l", "u'", "l'"])
                 return turns
 
 def oll2x2(cube):
@@ -291,12 +343,15 @@ def pll2x2(cube):
                 turns.append("u")
                 cube.performTurns(["u"])
     elif count == 0:
-        turns.extend(alg)
-        cube.performTurns(alg)
-        turns.append("u'")
-        cube.performTurns(["u'"])
-        turns.extend(alg)
-        cube.performTurns(alg)
+        alg = ["f", "r", "u'", "r'", "u'", "r", "u", "r'", "f'", "r", "u", "r'", "u'", "r'", "f", "r", "f'"]
+        while True:
+            if cube.net[1][2] == 4 and cube.net[2][1] == 2 and cube.net[2][2] == 3:
+                turns.extend(alg)
+                cube.performTurns(alg)
+                return turns
+            else:
+                cube.performTurns(['u'])
+                turns.append('u')
         while True:
             if cube.checkSolved():
                 return turns
@@ -323,17 +378,17 @@ def pll2x2(cube):
                 turns.append("u")
                 cube.performTurns(["u"])
 
-# c = cube.cube(2)
-# # scramble = c.scramble(10)
-# # print('Scramble: ', end='')
-# # for i in scramble:
-# #     print(i, end=' ')
-# # print()
-# c.performTurns(["l", "l", "d'", "u'", "l'", "r'", "r'", "b'", "b'", "b'"])
+# c = Cube.cube(2)
+# scramble = c.scramble(10)
+# c.performTurns(scramble)
+# print('Scramble: ', end='')
+# for i in scramble:
+#     print(i, end=' ')
+# print()
 # solve(c, True, True)
 
-numSolves = 1000
-c = cube.cube(2)
+numSolves = 10000
+c = Cube.cube(2)
 solves = np.zeros(numSolves)
 for i in range(numSolves):
     print(50*'\b' + 'Solving cube ' + str(i) + ' / ' + str(numSolves), end='')
