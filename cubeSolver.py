@@ -378,38 +378,40 @@ def pll2x2(cube):
                 turns.append("u")
                 cube.performTurns(["u"])
 
-# c = Cube.cube(2)
-# scramble = c.scramble(10)
-# c.performTurns(scramble)
-# print('Scramble: ', end='')
-# for i in scramble:
-#     print(i, end=' ')
-# print()
-# solve(c, True, True)
-
-numSolves = 10000
 c = Cube.cube(2)
-solves = np.zeros(numSolves)
-for i in range(numSolves):
-    print(50*'\b' + 'Solving cube ' + str(i) + ' / ' + str(numSolves), end='')
-    scramble = c.scramble(10)
-    solveMoves = solve(c)
-    if solveMoves == 'failed':
-        print('Solve ' + str(i) + ' failed')
-        for i in scramble:
-            print(i, end=' ')
-    else:
-        solves[i] = solveMoves
-    time.sleep(0.01)
-print(100*'\n')
-plt.xlim([min(solves)-5, max(solves)+5])
-plt.hist(solves, bins=np.arange(0, max(solves)), alpha=0.5)
-plt.xlabel('Number of moves to solve')
-plt.ylabel('Frequency')
-plt.title('Moves to Solve ' + str(numSolves) + ' Cubes')
-plt.show()
+scramble = c.scramble(10)
+print('Scramble: ', end='')
+for i in scramble:
+    print(i.upper(), end=' ')
+print()
+solve(c, True, True)
 
-print('Max: ' + str(int(max(solves))))
-print('Min: ' + str(int(min(solves))))
-print('Mean: ' + str(sum(solves)/float(len(solves))))
-print("Stdev: " + str(statistics.stdev(solves)))
+# numSolves = 1000
+# c = Cube.cube(2)
+# speed = 0
+# solves = np.zeros(numSolves)
+# for i in range(numSolves):
+#     t0  = time.time()
+#     print(100*'\b' + 'Solving cube ' + str(i) + ' / ' + str(numSolves) + ', ' + str(round(int(numSolves-i)*speed/60, 2)) +  ' minutes remaining ', end='')
+#     scramble = c.scramble(10)
+#     solveMoves = solve(c)
+#     t1 = time.time()
+#     speed = t1-t0
+#     if solveMoves == 'failed':
+#         print('Solve ' + str(i) + ' failed')
+#         for i in scramble:
+#             print(i, end=' ')
+#     else:
+#         solves[i] = solveMoves
+#     time.sleep(0.01)
+# print(100*'\n')
+# plt.xlim([min(solves)-5, max(solves)+5])
+# plt.hist(solves, bins=np.arange(0, max(solves)), alpha=0.5)
+# plt.xlabel('Number of moves to solve')
+# plt.ylabel('Frequency')
+# plt.title('Moves to Solve ' + str(numSolves) + ' Cubes')
+# plt.show()
+# print('Max: ' + str(int(max(solves))))
+# print('Min: ' + str(int(min(solves))))
+# print('Mean: ' + str(sum(solves)/float(len(solves))))
+# print("Stdev: " + str(statistics.stdev(solves)))
