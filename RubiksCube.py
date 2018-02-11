@@ -220,7 +220,7 @@ class cube():
     def getRandomMove(self):
         faces = ['u', 'd', 'r', 'l', 'f', 'b']
         directions = ["", "'"]
-        return(faces[rand.randint(0, 5)] + str(rand.randint(0, self.size-2)) + directions[rand.randint(0, 1)])
+        return(faces[rand.randint(0, 5)] + str(rand.randint(0, int(self.size/2)-1)) + directions[rand.randint(0, 1)])
 
     def performTurns(self, turns, printNet=False):
         for i in turns:
