@@ -41,6 +41,8 @@ def solve(scrambledCube, printNet=False, printStatistics=False):
         turns.extend(solve3x3FirstLayerEdges(tc))
         # F2L
         turns.extend(solve3x3F2L(tc))
+        # PLL
+        # turns.extend(solve3x3PLL(tc))
 
     # Finish
     if printNet:
@@ -52,7 +54,7 @@ def solve(scrambledCube, printNet=False, printStatistics=False):
         turns = cleanSolution(turns)
         post = len(turns)
         print(str(len(turns)) + ' moves / ' + str(round(t1-t0, 1)) + ' seconds (' + str(round(len(turns)/(t1-t0), 1)) + ' moves/second)')
-        print('Cleaning saved ' + str(pre-post) + ' turns')
+        print('Cleaning saved ' + str(pre-post) + ' turns (' + str(round(abs(100*((post-pre)/pre)), 2)) + '% faster)')
         print('\nSolution:')
         for i in turns:
             print(i.upper(), end=' ')
@@ -80,18 +82,19 @@ def getReverse(x):
         prime = "'"
     return x[0] + prime
 
-def cleanSolution(turns):
+def cleanPair(turns):
     # Removes conecutive different direction turns on the same face (u, u' = /)
-    stop = len(turns)
     i = 1
-    while i < stop:
+    while i < len(turns):
         x = turns[i-1]
         y = turns[i]
         if areReverses(x, y):
             turns = turns[:i-1] + turns[i+1:]
-            stop = len(turns)
             i = 0
         i += 1
+    return turns
+
+def cleanTriples(turns):
     # Convert three identical consecutive turns to one opposite turn (u, u, u = u'), also fix scramble to do the same
     stop = len(turns)
     i = 2
@@ -104,17 +107,38 @@ def cleanSolution(turns):
             stop = len(turns)
             i = 2
         i += 1
-    # Removes conecutive different direction turns on the same face (u, u' = /)
-    stop = len(turns)
-    i = 1
-    while i < stop:
-        x = turns[i-1]
-        y = turns[i]
-        if areReverses(x, y):
-            turns = turns[:i-1] + turns[i+1:]
-            stop = len(turns)
-            i = 0
+    return turns
+
+def cleanSolution(turns):
+    # Condenses three moves into 1 cube rotation (u, u1, u2 = z)
+    i = 2
+    while i < len(turns):
+        x = turns[i-2]
+        y = turns[i-1]
+        z = turns[i]
+        replace = ''
+        if x[0] == y[0] and y[0] == z[0]:
+            if len(y) == 2 and len(z) == 2:
+                if y[1] == '1' and z[1] == '2':
+                    if x[0] == 'u':
+                        replace = 'z'
+                    elif x[0] == "d":
+                        replace = "z'"
+                    elif x[0] == "f":
+                        replace = "x"
+                    elif x[0] == "b":
+                        replace = "x'"
+                    elif x[0] == "r":
+                        replace = "y"
+                    elif x[0] == "l":
+                        replace = "y'"
+                    turns = turns[:i-2] + [replace] + turns[i+1:]
+                    i = 2
         i += 1
+    turns = cleanPair(turns)
+    turns = cleanTriples(turns)
+    turns = cleanPair(turns)
+    turns = cleanTriples(turns)
     return turns
 
 def solve2x2corner(cube, corner):
@@ -636,10 +660,10 @@ def solve3x3FirstLayerEdges(cube):
     if cube.net[6][4] != 1 or cube.net[5][4] != 3:
         turns.extend(solve3x3Edge(cube, 0))
     # White/Green edge
-    if cube.net[7][5] != 1 or cube.net[4][7] != 5:
+    if cube.net[7][5] != 1 or cube.net[5][7] != 5:
         turns.extend(solve3x3Edge(cube, 1))
     # White/Orange edge
-    if cube.net[8][4] != 1 or cube.net[4][10] != 6:
+    if cube.net[8][4] != 1 or cube.net[5][10] != 6:
         turns.extend(solve3x3Edge(cube, 2))
     # White/Blue edge
     if cube.net[7][3] != 1 or cube.net[5][1] != 2:
@@ -649,67 +673,179 @@ def solve3x3FirstLayerEdges(cube):
 def solve3x3F2LPair(cube, pairIndex):
     turns = []
     uCount = 0
+    alg = []
+    moves = []
+    algReset = 0
+    thirCol = 1
     if pairIndex == 0:
         primCol = 5
         secCol = 3
-        while True:
-            # 1: Easy Cases
-            if cube.net[3][6] == 1 and cube.net[3][5] == 3 and cube.net[2][5] == 5 and find3x3Edge(cube, primCol, secCol) == (10, 1):
-                turns = ["r", "u", "r'"]
+    elif pairIndex == 1:
+        primCol = 6
+        secCol = 5
+    elif pairIndex == 2:
+        primCol = 2
+        secCol = 6
+    elif pairIndex == 3:
+        primCol = 3
+        secCol = 2
+    while True:
+        # 1: Easy Cases
+        if cube.net[3][6] == thirCol and cube.net[3][5] == secCol and cube.net[2][5] == primCol and find3x3Edge(cube, primCol, secCol) == (10, 1):
+            turns = ["r", "u", "r'"]
+            break
+        elif cube.net[3][6] == thirCol and cube.net[3][5] == secCol and cube.net[2][5] == primCol and find3x3Edge(cube, primCol, secCol) == (8, 0):
+            turns = ["u'", "f'", "u", "f"]
+            break
+        elif cube.net[3][6] == primCol and cube.net[3][5] == thirCol and cube.net[2][5] == secCol and find3x3Edge(cube, primCol, secCol) == (11, 0):
+            turns = ["f'", "u'", "f"]
+            break
+        elif cube.net[3][6] == primCol and cube.net[3][5] == thirCol and cube.net[2][5] == secCol and find3x3Edge(cube, primCol, secCol) == (9, 1):
+            turns = ["u", "r", "u'", "r'"]
+            break
+        # 2: Corner in bottom, edge in top layer
+        elif cube.net[6][5] == thirCol and cube.net[5][5] == secCol and cube.net[5][6] == primCol and find3x3Edge(cube, primCol, secCol) == (8, 0):
+            turns = ["u", "r", "u'", "r'", "u'", "f'", "u", "f"]
+            break
+        elif cube.net[6][5] == secCol and cube.net[5][5] == primCol and cube.net[5][6] == thirCol and find3x3Edge(cube, primCol, secCol) == (8, 0):
+            turns = ["f'", "u", "f", "u'", "f'", "u", "f"]
+            break
+        elif cube.net[6][5] == primCol and cube.net[5][5] == thirCol and cube.net[5][6] == secCol and find3x3Edge(cube, primCol, secCol) == (8, 0):
+            turns = ["f'", "u'", "f", "u", "f'", "u'", "f"]
+            break
+        elif cube.net[6][5] == thirCol and cube.net[5][5] == secCol and cube.net[5][6] == primCol and find3x3Edge(cube, primCol, secCol) == (9, 1):
+            turns = ["u'", "f'", "u", "f", "u", "r", "u'", "r'"]
+            break
+        elif cube.net[6][5] == secCol and cube.net[5][5] == primCol and cube.net[5][6] == thirCol and find3x3Edge(cube, primCol, secCol) == (9, 1):
+            turns = ["r", "u", "r'", "u'", "r", "u", "r'"]
+            break
+        elif cube.net[6][5] == primCol and cube.net[5][5] == thirCol and cube.net[5][6] == secCol and find3x3Edge(cube, primCol, secCol) == (9, 1):
+            turns = ["r", "u'", "r'", "u", "r", "u'", "r'"]
+            break
+        # 3: Corner in top, edge in middle
+        elif cube.net[2][5] == thirCol and cube.net[3][5] == primCol and cube.net[3][6] == secCol and find3x3Edge(cube, primCol, secCol) == (4, 0):
+            turns = ["r", "u", "r'", "u'", "r", "u", "r'", "u'", "r", "u", "r'"]
+            break
+        elif cube.net[2][5] == primCol and cube.net[3][5] == secCol and cube.net[3][6] == thirCol and find3x3Edge(cube, primCol, secCol) == (4, 0):
+            turns = ["u", "f'", "u", "f", "u", "f'", "u", "u", "f"]
+            break
+        elif cube.net[2][5] == secCol and cube.net[3][5] == thirCol and cube.net[3][6] == primCol and find3x3Edge(cube, primCol, secCol) == (4, 0):
+            turns = ["u'", "r", "u'", "r'", "u'", "r", "u", "u", "r'"]
+            break
+        elif cube.net[2][5] == thirCol and cube.net[3][5] == primCol and cube.net[3][6] == secCol and find3x3Edge(cube, primCol, secCol) == (4, 1):
+            turns = ["r", "u'", "r'", "f'", "u", "u", "f"]
+            break
+        elif cube.net[2][5] == primCol and cube.net[3][5] == secCol and cube.net[3][6] == thirCol and find3x3Edge(cube, primCol, secCol) == (4, 1):
+            turns = ["u", "f'", "u'", "f", "u'", "r", "u", "r'"]
+            break
+        elif cube.net[2][5] == secCol and cube.net[3][5] == thirCol and cube.net[3][6] == primCol and find3x3Edge(cube, primCol, secCol) == (4, 1):
+            turns = ["u'", "r", "u", "r'", "u", "f'", "u'", "f"]
+            break
+        # 4: Corner pointing outwards, edge in top layer
+        elif cube.net[3][5] == secCol and cube.net[2][5] == primCol and cube.net[3][6] == thirCol and find3x3Edge(cube, primCol, secCol) == (9, 0):
+            turns = ["r", "u'", "r'", "u", "u", "f'", "u'", "f"]
+            break
+        elif cube.net[3][5] == secCol and cube.net[2][5] == primCol and cube.net[3][6] == thirCol and find3x3Edge(cube, primCol, secCol) == (10, 0):
+            turns = ["u", "f'", "u", "u", "f", "u", "f'", "u", "u", "f"]
+            break
+        elif cube.net[3][5] == secCol and cube.net[2][5] == primCol and cube.net[3][6] == thirCol and find3x3Edge(cube, primCol, secCol) == (11, 0):
+            turns = ["u", "f'", "u'", "f", "u", "f'", "u", "u", "f"]
+            break
+        elif cube.net[3][5] == secCol and cube.net[2][5] == primCol and cube.net[3][6] == thirCol and find3x3Edge(cube, primCol, secCol) == (9, 1):
+            turns = ["u'", "r", "u'", "r'", "u", "r", "u", "r'"]
+            break
+        elif cube.net[3][5] == secCol and cube.net[2][5] == primCol and cube.net[3][6] == thirCol and find3x3Edge(cube, primCol, secCol) == (11, 1):
+            turns = ["u'", "r", "u", "r'", "u", "r", "u", "r'"]
+            break
+        elif cube.net[3][5] == secCol and cube.net[2][5] == primCol and cube.net[3][6] == thirCol and find3x3Edge(cube, primCol, secCol) == (8, 1):
+            turns = ["u", "f'", "u", "u", "f", "u'", "r", "u", "r'"]
+            break
+        elif cube.net[3][5] == thirCol and cube.net[2][5] == secCol and cube.net[3][6] == primCol and find3x3Edge(cube, primCol, secCol) == (8, 1):
+            turns = ["f'", "u", "f", "u'", "u'", "r", "u", "r'"]
+            break
+        elif cube.net[3][5] == thirCol and cube.net[2][5] == secCol and cube.net[3][6] == primCol and find3x3Edge(cube, primCol, secCol) == (11, 1):
+            turns = ["u'", "r", "u", "u", "r'", "u'", "r", "u", "u", "r'"]
+            break
+        elif cube.net[3][5] == thirCol and cube.net[2][5] == secCol and cube.net[3][6] == primCol and find3x3Edge(cube, primCol, secCol) == (10, 1):
+            turns = ["u'", "r", "u", "r'", "u'", "r", "u", "u", "r'"]
+            break
+        elif cube.net[3][5] == thirCol and cube.net[2][5] == secCol and cube.net[3][6] == primCol and find3x3Edge(cube, primCol, secCol) == (8, 0):
+            turns = ["u", "f'", "u", "f", "u'", "f'", "u'", "f"]
+            break
+        elif cube.net[3][5] == thirCol and cube.net[2][5] == secCol and cube.net[3][6] == primCol and find3x3Edge(cube, primCol, secCol) == (10, 0):
+            turns = ["u", "f'", "u'", "f", "u'", "f'", "u'", "f"]
+            break
+        elif cube.net[3][5] == thirCol and cube.net[2][5] == secCol and cube.net[3][6] == primCol and find3x3Edge(cube, primCol, secCol) == (9, 0):
+            turns = ["u'", "r", "u", "u", "r'", "u", "f'", "u'", "f"]
+            break
+        # 5: Corner pointing upwards, edge on top layer
+        elif cube.net[3][5] == primCol and cube.net[2][5] == thirCol and cube.net[3][6] == secCol and find3x3Edge(cube, primCol, secCol) == (8, 1):
+            turns = ["r", "u", "r'", "u'", "u'", "r", "u", "r'", "u'", "r", "u", "r'"]
+            break
+        elif cube.net[3][5] == primCol and cube.net[2][5] == thirCol and cube.net[3][6] == secCol and find3x3Edge(cube, primCol, secCol) == (11, 1):
+            turns = ["u", "u", "r", "u", "r'", "u", "r", "u'", "r'"]
+            break
+        elif cube.net[3][5] == primCol and cube.net[2][5] == thirCol and cube.net[3][6] == secCol and find3x3Edge(cube, primCol, secCol) == (10, 1):
+            turns = ["u", "r", "u", "u", "r'", "u", "r", "u'", "r'"]
+            break
+        elif cube.net[3][5] == primCol and cube.net[2][5] == thirCol and cube.net[3][6] == secCol and find3x3Edge(cube, primCol, secCol) == (9, 1):
+            turns = ["r", "u", "u", "r'", "u'", "r", "u", "r'"]
+            break
+        elif cube.net[3][5] == primCol and cube.net[2][5] == thirCol and cube.net[3][6] == secCol and find3x3Edge(cube, primCol, secCol) == (9, 0):
+            turns = ["f'", "u'", "f", "u", "u", "f'", "u'", "f", "u", "f'", "u'", "f"]
+            break
+        elif cube.net[3][5] == primCol and cube.net[2][5] == thirCol and cube.net[3][6] == secCol and find3x3Edge(cube, primCol, secCol) == (10, 0):
+            turns = ["u", "u", "f'", "u'", "f", "u'", "f'", "u", "f"]
+            break
+        elif cube.net[3][5] == primCol and cube.net[2][5] == thirCol and cube.net[3][6] == secCol and find3x3Edge(cube, primCol, secCol) == (11, 0):
+            turns = ["u'", "f'", "u", "u", "f", "u'", "f'", "u", "f"]
+            break
+        elif cube.net[3][5] == primCol and cube.net[2][5] == thirCol and cube.net[3][6] == secCol and find3x3Edge(cube, primCol, secCol) == (8, 0):
+            turns = ["f'", "u", "u", "f", "u", "f'", "u'", "f"]
+            break
+        # 6: Corner in bottom, edge in middle
+        elif cube.net[6][5] == thirCol and cube.net[5][5] == secCol and cube.net[5][6] == primCol and find3x3Edge(cube, primCol, secCol) == (4, 0):
+            turns = ["r", "u'", "r'", "u", "f'", "u", "u", "f", "u", "f'", "u", "u", "f"]
+            break
+        elif cube.net[6][5] == secCol and cube.net[5][5] == primCol and cube.net[5][6] == thirCol and find3x3Edge(cube, primCol, secCol) == (4, 1):
+            turns = ["r", "u'", "r'", "u", "r", "u", "u", "r'", "u", "r", "u'", "r'"]
+            break
+        elif cube.net[6][5] == secCol and cube.net[5][5] == primCol and cube.net[5][6] == thirCol and find3x3Edge(cube, primCol, secCol) == (4, 0):
+            turns = ["r", "u", "r'", "u'", "r", "u'", "r'", "u", "u", "f'", "u'", "f"]
+            break
+        elif cube.net[6][5] == primCol and cube.net[5][5] == thirCol and cube.net[5][6] == secCol and find3x3Edge(cube, primCol, secCol) == (4, 1):
+            turns = ["r", "u'", "r'", "u'", "r", "u", "r'", "u'", "r", "u", "u", "r'"]
+            break
+        elif cube.net[6][5] == primCol and cube.net[5][5] == thirCol and cube.net[5][6] == secCol and find3x3Edge(cube, primCol, secCol) == (4, 0):
+            turns = ["r", "u'", "r'", "u", "f'", "u'", "f", "u'", "f'", "u'", "f"]
+            break
+        uCount += 1
+        cube.performTurns(["u"])
+        moves.append('u')
+        if uCount == 4:
+            if algReset == 2:
                 break
-            elif cube.net[3][6] == 1 and cube.net[3][5] == 3 and cube.net[2][5] == 5 and find3x3Edge(cube, primCol, secCol) == (8, 0):
-                turns = ["u'", "f'", "u", "f"]
-                break
-            elif cube.net[3][6] == 5 and cube.net[3][5] == 1 and cube.net[2][5] == 3 and find3x3Edge(cube, primCol, secCol) == (11, 0):
-                turns = ["f'", "u'", "f"]
-                break
-            elif cube.net[3][6] == 5 and cube.net[3][5] == 1 and cube.net[2][5] == 3 and find3x3Edge(cube, primCol, secCol) == (9, 1):
-                turns = ["u", "r", "u'", "r'"]
-                break
-            # 2: Corner in bottom, edge in top layer
-            elif cube.net[6][5] == 1 and cube.net[5][5] == 3 and cube.net[5][6] == 5 and find3x3Edge(cube, primCol, secCol) == (8, 0):
-                turns = ["u", "r", "u'", "r'", "u'", "f'", "u", "f"]
-                break
-            elif cube.net[6][5] == 3 and cube.net[5][5] == 5 and cube.net[5][6] == 1 and find3x3Edge(cube, primCol, secCol) == (8, 0):
-                turns = ["f'", "u", "f", "u'", "f'", "u", "f"]
-                break
-            elif cube.net[6][5] == 5 and cube.net[5][5] == 1 and cube.net[5][6] == 3 and find3x3Edge(cube, primCol, secCol) == (8, 0):
-                turns = ["f'", "u'", "f", "u", "f'", "u'", "f"]
-                break
-            elif cube.net[6][5] == 1 and cube.net[5][5] == 3 and cube.net[5][6] == 5 and find3x3Edge(cube, primCol, secCol) == (9, 1):
-                turns = ["u'", "f'", "u", "f", "u", "r", "u'", "r'"]
-                break
-            elif cube.net[6][5] == 3 and cube.net[5][5] == 5 and cube.net[5][6] == 1 and find3x3Edge(cube, primCol, secCol) == (9, 1):
-                turns = ["r", "u", "r'", "u'", "r", "u", "r'"]
-                break
-            elif cube.net[6][5] == 5 and cube.net[5][5] == 1 and cube.net[5][6] == 3 and find3x3Edge(cube, primCol, secCol) == (9, 1):
-                turns = ["r", "u'", "r'", "u", "r", "u'", "r'"]
-                break
-            # 3: Corner in top, edge in middle
-            elif cube.net[2][5] == 1 and cube.net[3][5] == 5 and cube.net[3][6] == 3 and find3x3Edge(cube, primCol, secCol) == (4, 0):
-                turns = ["r", "u", "r'", "u'", "r", "u", "r'", "u'", "r", "u", "r'"]
-                break
-            elif cube.net[2][5] == 5 and cube.net[3][5] == 3 and cube.net[3][6] == 1 and find3x3Edge(cube, primCol, secCol) == (4, 0):
-                turns = ["u", "f'", "u", "f", "u", "f'", "u", "u", "f"]
-                break
-            elif cube.net[2][5] == 3 and cube.net[3][5] == 1 and cube.net[3][6] == 5 and find3x3Edge(cube, primCol, secCol) == (4, 0):
-                turns = ["u'", "r", "u'", "r'", "u'", "r", "u", "u", "r'"]
-                break
-            elif cube.net[2][5] == 1 and cube.net[3][5] == 5 and cube.net[3][6] == 3 and find3x3Edge(cube, primCol, secCol) == (4, 1):
-                turns = ["r", "u'", "r'", "f'", "u", "u", "f"]
-                break
-            elif cube.net[2][5] == 5 and cube.net[3][5] == 3 and cube.net[3][6] == 1 and find3x3Edge(cube, primCol, secCol) == (4, 1):
-                turns = ["u", "f'", "u'", "f", "u'", "r", "u", "r'"]
-                break
-            elif cube.net[2][5] == 3 and cube.net[3][5] == 1 and cube.net[3][6] == 5 and find3x3Edge(cube, primCol, secCol) == (4, 1):
-                turns = ["u'", "r", "u", "r'", "u", "f'", "u'", "f"]
-                break
-            uCount += 1
-            cube.performTurns(["u"])
+            if (cube.net[6][3] == thirCol and cube.net[5][2] == secCol and cube.net[5][3] == primCol) or (cube.net[6][3] == primCol and cube.net[5][2] == thirCol and cube.net[5][3] == secCol) or (cube.net[6][3] == secCol and cube.net[5][2] == primCol and cube.net[5][3] == thirCol):
+                alg = ["l'", "u'", "l"]
+            elif (cube.net[8][3] == thirCol and cube.net[5][11] == secCol and cube.net[5][0] == primCol) or (cube.net[8][3] == primCol and cube.net[5][11] == thirCol and cube.net[5][0] == secCol) or (cube.net[8][3] == secCol and cube.net[5][11] == primCol and cube.net[5][0] == thirCol):
+                alg = ["l", "u", "l'"]
+            elif (cube.net[8][5] == thirCol and cube.net[5][8] == secCol and cube.net[5][9] == primCol) or (cube.net[8][5] == primCol and cube.net[5][8] == thirCol and cube.net[5][9] == secCol) or (cube.net[8][5] == secCol and cube.net[5][8] == primCol and cube.net[5][9] == thirCol):
+                alg = ["r'", "u'", "r"]
+            if find3x3Edge(cube, primCol, secCol)[0] == 4:
+                alg.extend(["r", "u", "u", "r'"])
+            elif find3x3Edge(cube, primCol, secCol)[0] == 5:
+                alg.extend(["r'", "u", "u", "r"])
+            elif find3x3Edge(cube, primCol, secCol)[0] == 6:
+                alg.extend(["l", "u", "u", "l'"])
+            elif find3x3Edge(cube, primCol, secCol)[0] == 7:
+                alg.extend(["l'", "u", "u", "l"])
+            cube.performTurns(alg)
+            moves.extend(alg)
+            uCount = 0
+            algReset += 1
     cube.performTurns(turns)
-    for i in range(uCount):
-        turns.insert(0, "u")
-    return turns
+    moves.extend(turns)
+    return moves
 
 def solve3x3F2L(cube):
     # 0 - R/G
@@ -719,46 +855,88 @@ def solve3x3F2L(cube):
     turns = []
     if cube.net[6][5] != 1 or cube.net[5][5] != 3 or cube.net[5][6] != 5 or cube.net[4][5] != 3 or cube.net[4][6] != 5:
         turns.extend(solve3x3F2LPair(cube, 0))
+    turns.extend(["u", "u1", "u2"])
+    cube.performTurns(["u", "u1", "u2"])
+    if cube.net[6][5] != 1 or cube.net[5][5] != 5 or cube.net[5][6] != 6 or cube.net[4][5] != 5 or cube.net[4][6] != 6:
+        turns.extend(solve3x3F2LPair(cube, 1))
+    turns.extend(["u", "u1", "u2"])
+    cube.performTurns(["u", "u1", "u2"])
+    if cube.net[6][5] != 1 or cube.net[5][5] != 6 or cube.net[5][6] != 2 or cube.net[4][5] != 6 or cube.net[4][6] != 2:
+        turns.extend(solve3x3F2LPair(cube, 2))
+    turns.extend(["u", "u1", "u2"])
+    cube.performTurns(["u", "u1", "u2"])
+    if cube.net[6][5] != 1 or cube.net[5][5] != 2 or cube.net[5][6] != 3 or cube.net[4][5] != 2 or cube.net[4][6] != 3:
+        turns.extend(solve3x3F2LPair(cube, 3))
     return turns
 
-numSolves = 1
-c = Cube.cube(3)
-scrambleMoves = 10
+def solve3x3PLL(cube):
+    turns = []
+    uCount = 0
+    while True:
+        # Dot
+        e0, e1, e2, e3, = False, False, False, False
+        if cube.net[0][4] == 4: e0 = True
+        if cube.net[1][5] == 4: e1 = True
+        if cube.net[2][4] == 4: e2 = True
+        if cube.net[1][3] == 4: e3 = True
+        c0, c1, c2, c3 = 0, 0, 0, 0
 
-if numSolves == 1:
-    scramble = c.scramble(scrambleMoves)
-    # scramble = ["f'", "u", "f", "u'", "r", "u'", "r'", "u"]
-    # c.performTurns(scramble)
-    print('Scramble: ', end='')
-    for i in scramble:
-        print(i.upper(), end=' ')
-    print()
-    solve(c, True, True)
-else:
-    speed = [0]
-    solves = np.zeros(numSolves)
-    for i in range(numSolves):
-        t0  = time.time()
-        print(100*'\b' + 'Solving cube ' + str(i) + ' / ' + str(numSolves) + ', ' + str(round(int(numSolves-i)*(sum(speed)/len(speed))/60, 2)) +  ' minutes remaining ', end='')
+
+        if not (c0 or c1 or c2 or c3 or e0 or e1 or e2 or e3):
+            turns.extend(["r", "u", "b'", "r", "b", "r", "r", "u'", "r'", "f", "r", "f'"])
+            break
+        if c2 and not (c0 or c1 or c2 or e0 or e1 or e2 or e3):
+            turns.extend(["f'", "b", "b", "l", "b'", "l", "f", "u", "u", "f'", "l", "b'", "f"])
+            break
+        if c0 and c2 and not (c1 or c3 or e0 or e1 or e2 or e3):
+            turns.extend(["r", "u", "r'", "u", "r'", "f", "r", "f'", "u", "u", "r'", "f", "r", "f'"])
+            break
+        if c0 and c1 and not (c2 or c3 or e0 or e1 or e2 or e3):
+            turns.extend(["r'", "u", "u", "f", "r", "u", "r'", "u'", "f", "f", "u", "u", "f", "r"])
+            break
+        uCount += 1
+        cube.performTurns(['u'])
+        turns.append('u')
+    return turns
+
+def solveCube(cubeSize, scrambleMoves, numSolves=1):
+    c = Cube.cube(cubeSize)
+    if numSolves == 1:
         scramble = c.scramble(scrambleMoves)
-        solveMoves = solve(c)
-        t1 = time.time()
-        speed.append(t1-t0)
-        if solveMoves == 'failed':
-            print('Solve ' + str(i) + ' failed')
-            for i in scramble:
-                print(i, end=' ')
-        else:
-            solves[i] = len(solveMoves)
-        time.sleep(0.01)
-    print(100*'\n')
-    plt.xlim([min(solves)-5, max(solves)+5])
-    plt.hist(solves, bins=np.arange(0, max(solves)), alpha=0.5)
-    plt.xlabel('Number of moves to solve')
-    plt.ylabel('Frequency')
-    plt.title('Moves to Solve ' + str(numSolves) + ' Cubes')
-    plt.show()
-    print('Max: ' + str(int(max(solves))))
-    print('Min: ' + str(int(min(solves))))
-    print('Mean: ' + str(sum(solves)/float(len(solves))))
-    print("Stdev: " + str(round(statistics.stdev(solves), 4)))
+        # scramble = ["B0'",  "D0'",  "U0", "F0'", "F0'", "B0", "L0'", "L0'", "L0'", "F0"]
+        # c.performTurns(scramble)
+        print('Scramble: ', end='')
+        for i in scramble:
+            print(i.upper(), end=' ')
+        print()
+        solve(c, True, True)
+    else:
+        speed = [0]
+        solves = np.zeros(numSolves)
+        for i in range(numSolves):
+            t0  = time.time()
+            print(100*'\b' + 'Solving cube ' + str(i) + ' / ' + str(numSolves) + ', ' + str(round(int(numSolves-i)*(sum(speed)/len(speed))/60, 2)) +  ' minutes remaining ', end='')
+            scramble = c.scramble(scrambleMoves)
+            solveMoves = solve(c)
+            t1 = time.time()
+            speed.append(t1-t0)
+            if solveMoves == 'failed':
+                print('Solve ' + str(i) + ' failed')
+                for i in scramble:
+                    print(i, end=' ')
+            else:
+                solves[i] = len(solveMoves)
+            time.sleep(0.01)
+        print(100*'\n')
+        plt.xlim([min(solves)-5, max(solves)+5])
+        plt.hist(solves, bins=np.arange(0, max(solves)), alpha=0.5)
+        plt.xlabel('Number of moves to solve')
+        plt.ylabel('Frequency')
+        plt.title('Moves to Solve ' + str(numSolves) + ' Cubes')
+        plt.show()
+        print('Max: ' + str(int(max(solves))))
+        print('Min: ' + str(int(min(solves))))
+        print('Mean: ' + str(sum(solves)/float(len(solves))))
+        print("Stdev: " + str(round(statistics.stdev(solves), 4)))
+
+solveCube(3, 10)

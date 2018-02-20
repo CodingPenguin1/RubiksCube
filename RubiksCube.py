@@ -84,9 +84,6 @@ class cube():
                 print(colors.getFaceColor(self.net[row][col]) + str(self.net[row][col]) + colors.getFaceColor(9), end='  ')
             print()
 
-    def rotateFace(self):
-        pass
-
     def rotateLayer(self, face, index, prime=False):
         if face == 'U' or face == 'u' or face =='D' or face == 'd':
             rotCount = 3
