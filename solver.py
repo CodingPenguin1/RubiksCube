@@ -42,7 +42,7 @@ def solve(scrambledCube, printNet=False, printStatistics=False):
         # F2L
         turns.extend(solve3x3F2L(tc))
         # PLL
-        # turns.extend(solve3x3PLL(tc))
+        turns.extend(solve3x3PLL(tc))
 
     # Finish
     if printNet:
@@ -873,38 +873,97 @@ def solve3x3PLL(cube):
     turns = []
     uCount = 0
     while True:
-        # Dot
         e0, e1, e2, e3, = False, False, False, False
         if cube.net[0][4] == 4: e0 = True
         if cube.net[1][5] == 4: e1 = True
         if cube.net[2][4] == 4: e2 = True
         if cube.net[1][3] == 4: e3 = True
         c0, c1, c2, c3 = 0, 0, 0, 0
-
-
-        if not (c0 or c1 or c2 or c3 or e0 or e1 or e2 or e3):
-            turns.extend(["r", "u", "b'", "r", "b", "r", "r", "u'", "r'", "f", "r", "f'"])
-            break
-        if c2 and not (c0 or c1 or c2 or e0 or e1 or e2 or e3):
-            turns.extend(["f'", "b", "b", "l", "b'", "l", "f", "u", "u", "f'", "l", "b'", "f"])
-            break
-        if c0 and c2 and not (c1 or c3 or e0 or e1 or e2 or e3):
-            turns.extend(["r", "u", "r'", "u", "r'", "f", "r", "f'", "u", "u", "r'", "f", "r", "f'"])
-            break
-        if c0 and c1 and not (c2 or c3 or e0 or e1 or e2 or e3):
-            turns.extend(["r'", "u", "u", "f", "r", "u", "r'", "u'", "f", "f", "u", "u", "f", "r"])
-            break
+        if cube.net[0][3] != 4:
+            if cube.net[3][0] == 4:
+                c0 = 1
+            else:
+                c0 = 2
+        if cube.net[0][5] != 4:
+            if cube.net[3][8] == 4:
+                c1 = 2
+            else:
+                c1 = 1
+        if cube.net[2][5] != 4:
+            if cube.net[3][6] == 4:
+                c2 = 1
+            else:
+                c2 = 2
+        if cube.net[2][3] != 4:
+            if cube.net[3][3] == 4:
+                c3 = 1
+            else:
+                c3 = 2
+        
+        print(e0, e1, e2, e3, c0, c1, c2, c3)
+        # Dot
+        if not (e0 or e1 or e2 or e3):
+            if c0 == 1 and c1 == 2 and c2 == 1 and c3 == 2:
+                turns.extend(["r", "u", "b'", "r", "b", "r", "r", "u'", "r'", "f", "r", "f'"])
+                break
+            if c0 == 2 and c1 == 2 and c2 == 0 and c3 == 2:
+                turns.extend(["f'", "b", "b", "l", "b'", "l", "f", "u", "u", "f'", "l", "b'", "f"])
+                break
+            if c0 == 0 and c1 == 1 and c2 == 0 and c3 == 2:
+                turns.extend(["r", "u", "r'", "u", "r'", "f", "r", "f'", "u", "u", "r'", "f", "r", "f'"])
+                break
+            if c0 == 0 and c1 == 0 and c2 == 1 and c3 == 2:
+                turns.extend(["r'", "u", "u", "f", "r", "u", "r'", "u'", "f", "f", "u", "u", "f", "r"])
+                break
+            if c0 == 1 and c1 == 2 and c2 == 2 and c3 == 1:
+                turns.extend(["r'", "f", "r", "f'", "u", "u", "r'", "f", "r", "f", "f", "u", "u", "f"])
+                break
+            if c0 == 1 and c1 == 0 and c2 == 1 and c3 == 1:
+                turns.extend(["r'", "u", "u", "r'", "f", "r", "f'", "u'", "f'", "u'", "f", "u'", "r"])
+                break
+            if c0 == 0 and c1 == 0 and c2 == 0 and c3 == 0:
+                turns.extend(["r'", "l", "f", "f", "r", "l'", "u", "u", "r'", "l", "f", "r", "l'", "u", "u", "r'", "l", "f", "f", "r", "l'"])
+                break
+            if c0 == 2 and c1 == 1 and c2 == 0 and c3 == 0:
+                turns.extend(["f", "r", "u", "r'", "u", "f'", "u", "u", "f'", "l", "f", "l'"])
+                break
+        
+        # Vertical Line
+        if e0 and e2 and not (e1 or e3):
+            if c0 == 2 and c1 == 2 and c2 == 1 and c3 == 1:
+                turns.extend(["r'", "u'", "f'", "u", "f'", "l", "f", "l'", "f", "r"])
+                break
+            if c0 == 1 and c1 == 2 and c2 == 1 and c3 == 2:
+                turns.extend(["r", "u'", "b", "b", "d", "b'", "u", "u", "b", "d'", "b", "b", "u", "r'"])
+                break
+        
+        # Horizontal Line
+        if not (e0 or e2) and e1 and e3:
+            if c0 == 2 and c1 == 2 and c2 == 1 and c3 == 1:
+                turns.extend(["f", "u", "r", "u'", "r'", "u", "r", "u'", "r'", "f'"])
+                break
+            if c0 == 1 and c1 == 2 and c2 == 1 and c3 == 2:
+                turns.extend(["l'", "b'", "l", "u'", "r'", "u", "r", "u'", "r'", "u", "r", "l'", "b", "l"])
+                break
+        print('uCount: ' + str(uCount))
+        cube.printNet()
+        print()
         uCount += 1
         cube.performTurns(['u'])
         turns.append('u')
+#==============================================================================
+        if uCount == 4:
+            break
+#==============================================================================\
+    cube.performTurns(turns)    
     return turns
 
 def solveCube(cubeSize, scrambleMoves, numSolves=1):
     c = Cube.cube(cubeSize)
     if numSolves == 1:
         scramble = c.scramble(scrambleMoves)
-        # scramble = ["B0'",  "D0'",  "U0", "F0'", "F0'", "B0", "L0'", "L0'", "L0'", "F0"]
-        # c.performTurns(scramble)
+#        scramble = ["B0'", "U0'", "F0'", "R0", "F0", "D0", "B0", "F0'", "D0'", "U0"]
+#        c.performTurns(scramble)
         print('Scramble: ', end='')
         for i in scramble:
             print(i.upper(), end=' ')
