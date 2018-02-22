@@ -1202,9 +1202,13 @@ def solve3x3PLL(cube):
 def solveCube(cubeSize, scrambleMoves, numSolves=1):
     c = Cube.cube(cubeSize)
     if numSolves == 1:
-        scramble = c.scramble(scrambleMoves)
-        # scramble = ["d", "u'", "f", "u", "r'", "l'", "r", "l", "u'", "l'"]
-        # c.performTurns(scramble)
+        if type(scrambleMoves) == int:
+            scramble = c.scramble(scrambleMoves)
+        elif isinstance(scrambleMoves[0], list):
+            c.net = scrambleMoves
+        else:
+            scramble = scrambleMoves
+            c.performTurns(scramble)
         print('\nScramble: ', end='')
         for i in scramble:
             print(i.upper(), end=' ')
@@ -1219,7 +1223,7 @@ def solveCube(cubeSize, scrambleMoves, numSolves=1):
             scramble = c.scramble(scrambleMoves)
             solveMoves = solve(c)
 
-            if len(solveMoves) < 10:
+            if len(solveMoves) == 0:
                 for i in scramble:
                     print(i.upper(), end=' ')
                 print()
@@ -1245,4 +1249,4 @@ def solveCube(cubeSize, scrambleMoves, numSolves=1):
         print('Mean: ' + str(sum(solves)/float(len(solves))))
         print("Stdev: " + str(round(statistics.stdev(solves), 4)))
 
-solveCube(3, 20, 5000)
+solveCube(3, ["r'", "l'", "u", "b", "f"])
