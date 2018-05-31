@@ -81,7 +81,10 @@ class cube():
     def printNet(self):
         for row in range(3*self.size):
             for col in range(4*self.size):
-                print(colors.getFaceColor(self.net[row][col]) + str(self.net[row][col]) + colors.getFaceColor(9), end='  ')
+                if self.net[row][col] == 0:
+                    print(' ', end='  ')
+                else:
+                    print(colors.getFaceColor(self.net[row][col]) + str(self.net[row][col]) + colors.getFaceColor(9), end='  ')
             print()
 
     def rotateLayer(self, face, index, prime=False):

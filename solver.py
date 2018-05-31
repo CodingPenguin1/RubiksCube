@@ -6,9 +6,11 @@
 # Date: 1/28/2017
 # =============================================================================
 
+import os
+os.chdir(os.path.dirname(os.path.realpath(__file__)))
 import RubiksCube as Cube
 import time
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 import numpy as np
 import statistics
 
@@ -1238,15 +1240,17 @@ def solveCube(cubeSize, scrambleMoves, numSolves=1):
                 solves[i] = len(solveMoves)
             time.sleep(0.01)
         print(100*'\n')
-        plt.xlim([min(solves)-5, max(solves)+5])
-        plt.hist(solves, bins=np.arange(0, max(solves)), alpha=0.5)
-        plt.xlabel('Number of moves to solve')
-        plt.ylabel('Frequency')
-        plt.title('Moves to Solve ' + str(numSolves) + ' Cubes')
-        plt.show()
+#        plt.xlim([min(solves)-5, max(solves)+5])
+#        plt.hist(solves, bins=np.arange(0, max(solves)), alpha=0.5)
+#        plt.xlabel('Number of moves to solve')
+#        plt.ylabel('Frequency')
+#        plt.title('Moves to Solve ' + str(numSolves) + ' Cubes')
+#        plt.show()
         print('Max: ' + str(int(max(solves))))
         print('Min: ' + str(int(min(solves))))
         print('Mean: ' + str(sum(solves)/float(len(solves))))
         print("Stdev: " + str(round(statistics.stdev(solves), 4)))
 
-solveCube(3, ["r'", "l'", "u", "b", "f"])
+numMoves = int(input('How many moves to scramble? '))
+solveCube(3, numMoves)
+input("Press [Enter] to quit")
