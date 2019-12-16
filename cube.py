@@ -132,11 +132,69 @@ class Cube:
                 layer = np.roll(layer, 3)
             self.net[self.size+depth] = layer
 
+    def rotate(self, axis, direction):
+        # Rotate the entire cube
+        # axis (str) : 'x', 'y', or 'z'. x is R->L, y is U->D, z is F->B. Perspective from the first letter here (x means rotate cw about R face)
+        # direction (int) : -1 or 1. -1 is ccw 1 is cw
+
+        # Right face
+        if axis == 'x':
+            # x'
+            if direction == -1:
+                self.net[:self.size, self.size*2:self.size*3] = np.rot90(self.net[:self.size, self.size*2:self.size*3], k=3)
+                self.net[self.size:self.size*2, :] = np.roll(self.net[self.size:self.size*2, :], -3, axis=1)
+                self.net[self.size*2:self.size*3, self.size*2:self.size*3] = np.rot90(self.net[self.size*2:self.size*3, self.size*2:self.size*3], k=1)
+            # x
+            elif direction == 1:
+                self.net[:self.size, self.size*2:self.size*3] = np.rot90(self.net[:self.size, self.size*2:self.size*3], k=1)
+                self.net[self.size:self.size*2, :] = np.roll(self.net[self.size:self.size*2, :], 3, axis=1)
+                self.net[self.size*2:self.size*3, self.size*2:self.size*3] = np.rot90(self.net[self.size*2:self.size*3, self.size*2:self.size*3], k=3)
+
+        # Top face
+        elif axis == 'y':
+            layers = np.append(self.net[:, self.size*2:self.size*3], self.net[self.size:self.size*2, :self.size])
+            # y'
+            if direction == -1:
+                self.net[self.size:self.size*2, self.size:self.size*2] = np.rot90(self.net[self.size:self.size*2, self.size:self.size*2], k=1)
+                self.net[self.size:self.size*2, self.size*3:] = np.rot90(self.net[self.size:self.size*2, self.size*3:], k=3)
+                layers = np.roll(layers, -9, axis=0)
+            # y
+            elif direction == 1:
+                self.net[self.size:self.size*2, self.size:self.size*2] = np.rot90(self.net[self.size:self.size*2, self.size:self.size*2], k=3)
+                self.net[self.size:self.size*2, self.size*3:] = np.rot90(self.net[self.size:self.size*2, self.size*3:], k=1)
+                layers = np.roll(layers, 9, axis=0)
+            layers = np.reshape(layers, (self.size*4, self.size), order='C')
+            self.net[:, self.size*2:self.size*3] = layers[:self.size*3, :]
+            self.net[self.size:self.size*2, :self.size] = layers[self.size*3:, :]
+
+        # Front face
+        elif axis == 'z':
+            layers = np.concatenate([self.net[self.size:self.size*2, self.size:self.size*2], self.net[:self.size, self.size*2:self.size*3], self.net[self.size:self.size*2, self.size*3:], self.net[self.size*2:self.size*3, self.size*2:self.size*3]], axis=0)
+            # z'
+            if direction == -1:
+                self.net[self.size:self.size*2, :self.size] = np.rot90(self.net[self.size:self.size*2, :self.size], k=1)
+                self.net[self.size:self.size*2, self.size*2:self.size*3] = np.rot90(self.net[self.size:self.size*2, self.size*2:self.size*3], k=3)
+                layers = np.roll(layers, -9, axis=0)
+            # z
+            elif direction == 1:
+                self.net[self.size:self.size*2, :self.size] = np.rot90(self.net[self.size:self.size*2, :self.size], k=3)
+                self.net[self.size:self.size*2, self.size*2:self.size*3] = np.rot90(self.net[self.size:self.size*2, self.size*2:self.size*3], k=1)
+                layers = np.roll(layers, 9, axis=0)
+            self.net[self.size:self.size*2, self.size:self.size*2] = layers[:self.size]
+            self.net[:self.size, self.size*2:self.size*3] = layers[self.size:self.size*2]
+            self.net[self.size:self.size*2, self.size*3:] = layers[self.size*2:self.size*3]
+            self.net[self.size*2:self.size*3, self.size*2:self.size*3] = layers[self.size*3:]
+
 
 if __name__ == '__main__':
     size = 3
     cube = Cube(size)
+    cube.net[3][6] = 9
+    cube.net[3][0] = 9
     print(cube.net)
     print()
-    cube.turn(5, 1, 1)
+    cube.rotate('z', -1)
+    print(cube.net)
+    print()
+    cube.rotate('z', 1)
     print(cube.net)
