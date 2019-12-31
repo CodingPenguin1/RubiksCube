@@ -37,18 +37,18 @@ class Cube:
         # Top face (0)
         if side == 0:
             # U
-            layer = np.append(self.net[:, size*3-1-depth], self.net[size:size*2, depth])
+            layer = np.append(self.net[:, self.size*3-1-depth], self.net[self.size:self.size*2, depth])
             if direction == 1:
                 if depth == 0:
                     self.net[self.size*1: self.size*2, self.size*3: self.size*4] = np.rot90(self.net[self.size*1: self.size*2, self.size*3: self.size*4], k=3)
-                layer = np.roll(layer, -3)
+                layer = np.roll(layer, -self.size)
             # U'
             else:
                 if depth == 0:
                     self.net[self.size*1: self.size*2, self.size*3: self.size*4] = np.rot90(self.net[self.size*1: self.size*2, self.size*3: self.size*4], k=1)
-                layer = np.roll(layer, 3)
-            self.net[:, size*3-1-depth] = layer[:size*3]
-            self.net[size:size*2, depth] = layer[size*3:]
+                layer = np.roll(layer, self.size)
+            self.net[:, self.size*3-1-depth] = layer[:self.size*3]
+            self.net[self.size:self.size*2, depth] = layer[self.size*3:]
 
         # Front Face (1)
         if side == 1:
@@ -57,31 +57,31 @@ class Cube:
             if direction == 1:
                 if depth == 0:
                     self.net[self.size*1: self.size*2, self.size*2: self.size*3] = np.rot90(self.net[self.size*1: self.size*2, self.size*2: self.size*3], k=3)
-                layer = np.roll(layer, -3)
+                layer = np.roll(layer, -self.size)
             # F'
             else:
                 if depth == 0:
                     self.net[self.size*1: self.size*2, self.size*2: self.size*3] = np.rot90(self.net[self.size*1: self.size*2, self.size*2: self.size*3], k=1)
-                layer = np.roll(layer, 3)
-            self.net[self.size-1-depth, self.size*2:self.size*3] = layer[:size]
-            self.net[self.size:self.size*2, self.size*2-1-depth] = layer[size:size*2]
-            self.net[self.size*2+depth, self.size*2:self.size*3] = layer[size*2:size*3]
-            self.net[self.size:self.size*2, self.size*3+depth] = layer[size*3:]
+                layer = np.roll(layer, self.size)
+            self.net[self.size-1-depth, self.size*2:self.size*3] = layer[:self.size]
+            self.net[self.size:self.size*2, self.size*2-1-depth] = layer[self.size:self.size*2]
+            self.net[self.size*2+depth, self.size*2:self.size*3] = layer[self.size*2:self.size*3]
+            self.net[self.size:self.size*2, self.size*3+depth] = layer[self.size*3:]
 
         # Right Face (2)
         if side == 2:
             # R
-            layer = self.net[size*2-1-depth, :]
+            layer = self.net[self.size*2-1-depth, :]
             if direction == 1:
                 if depth == 0:
                     self.net[self.size*2:, self.size*2: self.size*3] = np.rot90(self.net[self.size*2:, self.size*2: self.size*3], k=3)
-                layer = np.roll(layer, 3)
+                layer = np.roll(layer, self.size)
             # R'
             else:
                 if depth == 0:
                     self.net[self.size*2:, self.size*2: self.size*3] = np.rot90(self.net[self.size*2:, self.size*2: self.size*3], k=1)
-                layer = np.roll(layer, -3)
-            self.net[size*2-1-depth, :] = layer
+                layer = np.roll(layer, -self.size)
+            self.net[self.size*2-1-depth, :] = layer
 
         # Bottom (Down) Face (3)
         if side == 3:
@@ -90,12 +90,12 @@ class Cube:
             if direction == 1:
                 if depth == 0:
                     self.net[self.size:self.size*2, self.size:self.size*2] = np.rot90(self.net[self.size:self.size*2, self.size:self.size*2], k=3)
-                layer = np.roll(layer, 3)
+                layer = np.roll(layer, self.size)
             # D'
             else:
                 if depth == 0:
                     self.net[self.size:self.size*2:, self.size:self.size*2] = np.rot90(self.net[self.size:self.size*2, self.size:self.size*2], k=1)
-                layer = np.roll(layer, -3)
+                layer = np.roll(layer, -self.size)
             self.net[:, self.size*2+depth] = layer[:self.size*3]
             self.net[self.size:self.size*2, self.size-1-depth] = layer[self.size*3:]
 
@@ -106,12 +106,12 @@ class Cube:
             if direction == 1:
                 if depth == 0:
                     self.net[self.size:self.size*2, :self.size] = np.rot90(self.net[self.size:self.size*2, :self.size], k=3)
-                layer = np.roll(layer, -3)
+                layer = np.roll(layer, -self.size)
             # B'
             else:
                 if depth == 0:
                     self.net[self.size:self.size*2:, :self.size] = np.rot90(self.net[self.size:self.size*2, :self.size], k=1)
-                layer = np.roll(layer, 3)
+                layer = np.roll(layer, self.size)
             self.net[self.size:self.size*2, self.size+depth] = layer[:self.size]
             self.net[depth, self.size*2:self.size*3] = layer[self.size:self.size*2]
             self.net[self.size:self.size*2, self.size*4-1-depth] = layer[self.size*2:self.size*3]
@@ -124,12 +124,12 @@ class Cube:
             if direction == 1:
                 if depth == 0:
                     self.net[:self.size, self.size*2:self.size*3] = np.rot90(self.net[:self.size, self.size*2:self.size*3], k=3)
-                layer = np.roll(layer, -3)
+                layer = np.roll(layer, -self.size)
             # L'
             else:
                 if depth == 0:
                     self.net[:self.size:, self.size*2:self.size*3] = np.rot90(self.net[:self.size, self.size*2:self.size*3], k=1)
-                layer = np.roll(layer, 3)
+                layer = np.roll(layer, self.size)
             self.net[self.size+depth] = layer
 
     def rotate(self, axis, direction):
@@ -187,14 +187,14 @@ class Cube:
 
 
 if __name__ == '__main__':
-    size = 3
+    size = 4
     cube = Cube(size)
     cube.net[3][6] = 9
     cube.net[3][0] = 9
     print(cube.net)
     print()
-    cube.rotate('z', -1)
+    cube.turn(1, -1)
     print(cube.net)
     print()
-    cube.rotate('z', 1)
+    cube.turn(1, 1)
     print(cube.net)

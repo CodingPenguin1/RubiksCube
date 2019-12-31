@@ -72,7 +72,8 @@ def drawCube(cube):
 
 
 def main():
-    cube = Cube(3)
+    global cubeTurnTimeout
+    cube = Cube(20)
 
     # Main loop
     running = True
@@ -96,7 +97,7 @@ def main():
         # Push the frame to the screen
         pygame.display.update()
 
-        # Input handling
+        # Game quitting handling
         events = pygame.event.get()
         for event in events:
             if event.type == pygame.KEYDOWN and event.key == pygame.K_q:
@@ -107,6 +108,41 @@ def main():
                 # Exit
                 running = False
                 break
+
+        # Normal input handling
+        if time() - cubeTurnTimeout > 0.05:
+            cubeTurnTimeout = time()
+            allKeys = pygame.key.get_pressed()
+            if allKeys[pygame.K_f]:
+                if allKeys[pygame.K_LSHIFT] or allKeys[pygame.K_RSHIFT]:
+                    cube.turn(1, -1)
+                else:
+                    cube.turn(1, 1)
+            if allKeys[pygame.K_u]:
+                if allKeys[pygame.K_LSHIFT] or allKeys[pygame.K_RSHIFT]:
+                    cube.turn(0, -1)
+                else:
+                    cube.turn(0, 1)
+            if allKeys[pygame.K_r]:
+                if allKeys[pygame.K_LSHIFT] or allKeys[pygame.K_RSHIFT]:
+                    cube.turn(2, -1)
+                else:
+                    cube.turn(2, 1)
+            if allKeys[pygame.K_l]:
+                if allKeys[pygame.K_LSHIFT] or allKeys[pygame.K_RSHIFT]:
+                    cube.turn(5, -1)
+                else:
+                    cube.turn(5, 1)
+            if allKeys[pygame.K_d]:
+                if allKeys[pygame.K_LSHIFT] or allKeys[pygame.K_RSHIFT]:
+                    cube.turn(3, -1)
+                else:
+                    cube.turn(3, 1)
+            if allKeys[pygame.K_b]:
+                if allKeys[pygame.K_LSHIFT] or allKeys[pygame.K_RSHIFT]:
+                    cube.turn(4, -1)
+                else:
+                    cube.turn(4, 1)
 
 
 if __name__ == '__main__':
@@ -126,6 +162,22 @@ if __name__ == '__main__':
 
     # Other global vars
     changeViewmodeTimeout = time()  # You can only change the view mode once every 0.5s (so that you don't press the button a million times with one press)
+    cubeTurnTimeout = time()        # You can only turn a face once every 0.05s
+
+    # Print instructions
+    print("Turn | Keybinding")
+    print("  F' |     f")
+    print("  F  |     F")
+    print("  R  |     r")
+    print("  R' |     R")
+    print("  U  |     u")
+    print("  U' |     U")
+    print("  B  |     b")
+    print("  B' |     B")
+    print("  L  |     l")
+    print("  L' |     L")
+    print("  D  |     d")
+    print("  D' |     D")
 
     # Go to main control loop
     main()
